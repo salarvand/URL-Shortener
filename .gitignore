@@ -55,6 +55,7 @@ nunit-*.xml
 
 # Visual Studio
 .vs/
+*.csproj.user
 
 # Cursor
 .cursor/URL-Shortener.rule

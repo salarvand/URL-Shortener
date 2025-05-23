@@ -16,7 +16,7 @@ namespace URLShortener.API.Controllers
         }
 
         [HttpGet("{code}")]
-        public async Task<IActionResult> Redirect(string code)
+        public async Task<IActionResult> RedirectToUrl(string code)
         {
             var originalUrl = await _shortUrlService.RedirectAndTrackAsync(code);
             if (string.IsNullOrEmpty(originalUrl))
