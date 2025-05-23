@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -60,8 +61,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // In production, add HSTS
+    app.UseHsts();
+}
+
+// Add security headers to all responses
+app.UseSecurityHeaders();
 
 app.UseHttpsRedirection();
+
+// Add security middleware
+app.UseUrlSecurity();
+app.UseRateLimiting();
 
 app.UseCors();
 
