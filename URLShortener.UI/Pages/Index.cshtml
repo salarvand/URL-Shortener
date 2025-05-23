@@ -1,0 +1,118 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "URL Shortener";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">URL Shortener</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="mb-3">
+                            <label asp-for="CreateModel.OriginalUrl" class="form-label">Enter URL to shorten</label>
+                            <input asp-for="CreateModel.OriginalUrl" class="form-control" placeholder="https://example.com/long-url" required />
+                            <span asp-validation-for="CreateModel.OriginalUrl" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="CreateModel.CustomShortCode" class="form-label">Custom short code (optional)</label>
+                            <input asp-for="CreateModel.CustomShortCode" class="form-control" placeholder="e.g. mylink" />
+                            <span asp-validation-for="CreateModel.CustomShortCode" class="text-danger"></span>
+                            <div class="form-text">Leave empty to generate a random code.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="CreateModel.ExpiresAt" class="form-label">Expiration date (optional)</label>
+                            <input asp-for="CreateModel.ExpiresAt" type="date" class="form-control" />
+                            <span asp-validation-for="CreateModel.ExpiresAt" class="text-danger"></span>
+                            <div class="form-text">Leave empty for no expiration.</div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Shorten URL</button>
+                    </form>
+                </div>
+            </div>
+            
+            @if (Model.ShortUrl != null)
+            {
+                <div class="card mt-4">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">Your Short URL</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Original URL</label>
+                            <input type="text" class="form-control" value="@Model.ShortUrl.OriginalUrl" readonly />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Short URL</label>
+                            <div class="input-group">
+                                <input id="shortUrlInput" type="text" class="form-control" value="@Model.BaseUrl/s/@Model.ShortUrl.ShortCode" readonly />
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                                    <i class="bi bi-clipboard"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <a href="@Model.BaseUrl/s/@Model.ShortUrl.ShortCode" target="_blank" class="btn btn-outline-primary">
+                                <i class="bi bi-box-arrow-up-right"></i> Open Link
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            
+            @if (Model.RecentUrls != null && Model.RecentUrls.Any())
+            {
+                <div class="card mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">Recent URLs</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Short URL</th>
+                                    <th>Original URL</th>
+                                    <th>Clicks</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var url in Model.RecentUrls)
+                                {
+                                    <tr>
+                                        <td><a href="@Model.BaseUrl/s/@url.ShortCode" target="_blank">@url.ShortCode</a></td>
+                                        <td>@(url.OriginalUrl.Length > 30 ? url.OriginalUrl.Substring(0, 30) + "..." : url.OriginalUrl)</td>
+                                        <td>@url.ClickCount</td>
+                                        <td>@url.CreatedAt.ToString("g")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyToClipboard() {
+            var copyText = document.getElementById("shortUrlInput");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // For mobile devices
+            navigator.clipboard.writeText(copyText.value);
+            
+            // Show a toast or other notification that copying worked
+            alert("Copied: " + copyText.value);
+        }
+    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
