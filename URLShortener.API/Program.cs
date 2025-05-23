@@ -15,11 +15,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers()
-    .AddFluentValidation(fv => 
-    {
-        fv.RegisterValidatorsFromAssemblyContaining<CreateShortUrlDtoValidator>();
-        fv.DisableDataAnnotationsValidation = true;
-    });
+    .AddFluentValidationAutoValidation()
+    .AddFluentValidationClientsideAdapters();
+
+// Register validators
+builder.Services.AddValidatorsFromAssemblyContaining<CreateShortUrlDtoValidator>();
 
 // Add API Layer services
 builder.Services.AddEndpointsApiExplorer();
@@ -51,11 +51,7 @@ builder.Services.AddCors(options =>
         });
 });
 
-// Add DbContext
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Register validators
+// Register specific validators
 builder.Services.AddTransient<IValidator<CreateShortUrlDto>, CreateShortUrlDtoValidator>();
 builder.Services.AddTransient<IValidator<ShortUrlDto>, ShortUrlDtoValidator>();
 

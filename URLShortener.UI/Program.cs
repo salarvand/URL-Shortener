@@ -7,11 +7,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages()
-    .AddFluentValidation(fv => 
-    {
-        fv.RegisterValidatorsFromAssemblyContaining<CreateShortUrlDtoValidator>();
-        fv.DisableDataAnnotationsValidation = true;
-    });
+    .AddFluentValidationAutoValidation()
+    .AddFluentValidationClientsideAdapters();
+
+// Register validators
+builder.Services.AddValidatorsFromAssemblyContaining<CreateShortUrlDtoValidator>();
 
 // Configure HttpClient for API calls
 builder.Services.AddHttpClient("API", client =>
