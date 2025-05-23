@@ -7,7 +7,7 @@ using MediatR;
 using System;
 using System.Linq;
 using System.Reflection;
-using URLShortener.Application.Features.ShortUrls;
+using URLShortener.API.Middleware;
 using URLShortener.Application.Interfaces;
 using URLShortener.Application.Services;
 using URLShortener.Domain;
@@ -21,7 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Add MediatR
-builder.Services.AddMediatR(typeof(CreateShortUrl).Assembly);
+builder.Services.AddMediatR(typeof(ShortUrlService).Assembly);
 
 // Add API Layer services
 builder.Services.AddEndpointsApiExplorer();
@@ -34,6 +34,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Add Application Layer services
 builder.Services.AddScoped<IShortUrlService, ShortUrlService>();
 builder.Services.AddScoped<IValidationService, ValidationService>();
+// ValidationService will be registered by FluentValidation
 
 // Add Infrastructure Layer services
 builder.Services.AddScoped<IShortUrlRepository, ShortUrlRepository>();
@@ -41,16 +42,28 @@ builder.Services.AddScoped<IShortUrlRepository, ShortUrlRepository>();
 builder.Services.AddSingleton<IShortCodeGenerator, Base62ShortCodeGenerator>();
 builder.Services.AddSingleton<IUrlValidator, UrlValidator>();
 
-// Add CORS
+// Add security services
+builder.Services.AddSingleton<IUrlScanningService, UrlScanningService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IRateLimiter, InMemoryRateLimiter>();
+
+// Add CORS with a more restrictive policy
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(
         policy =>
         {
-            policy.AllowAnyOrigin()
+            policy.WithOrigins("https://localhost:5001", "http://localhost:5000")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
+});
+
+// Add HTTPS redirection
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.HttpsPort = 5001;
+    options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
 });
 
 var app = builder.Build();
@@ -68,13 +81,13 @@ else
 }
 
 // Add security headers to all responses
-app.UseSecurityHeaders();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 app.UseHttpsRedirection();
 
 // Add security middleware
-app.UseUrlSecurity();
-app.UseRateLimiting();
+app.UseMiddleware<UrlSecurityMiddleware>();
+app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseCors();
 
