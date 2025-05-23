@@ -10,12 +10,13 @@ namespace URLShortener.Application.Validation
         {
             RuleFor(x => x.OriginalUrl)
                 .NotEmpty().WithMessage("Please enter a URL to shorten")
-                .Must(BeAValidUrl).WithMessage("Please enter a valid URL");
+                .Must(BeAValidUrl).WithMessage("Please enter a valid URL")
+                .MaximumLength(2000).WithMessage("URL cannot exceed 2000 characters");
 
             RuleFor(x => x.CustomShortCode)
-                .Matches(@"^[a-zA-Z0-9_-]{0,20}$")
+                .Matches(@"^[a-zA-Z0-9_-]{1,20}$")
                 .When(x => !string.IsNullOrEmpty(x.CustomShortCode))
-                .WithMessage("Custom short code must contain only letters, numbers, underscores, or hyphens and be at most 20 characters long");
+                .WithMessage("Custom short code must contain only letters, numbers, underscores, or hyphens and be between 1-20 characters");
 
             RuleFor(x => x.ExpiresAt)
                 .Must(BeInFuture).When(x => x.ExpiresAt.HasValue)
