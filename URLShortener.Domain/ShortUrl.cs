@@ -98,7 +98,7 @@ namespace URLShortener.Domain
                 ClickCount));
         }
 
-        public void RecordClick(string userAgent = null, string ipAddress = null, string refererUrl = null)
+        public void RecordClick(string? userAgent = null, string? ipAddress = null, string? refererUrl = null)
         {
             var clickStat = ClickStatistic.Create(Id, userAgent, ipAddress, refererUrl);
             _clickStatistics.Add(clickStat);
