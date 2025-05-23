@@ -1,16 +1,21 @@
 using FluentValidation;
 using System;
+using URLShortener.Application.Interfaces;
 using URLShortener.Application.Models;
 
 namespace URLShortener.Application.Validation
 {
     public class CreateShortUrlDtoValidator : AbstractValidator<CreateShortUrlDto>
     {
-        public CreateShortUrlDtoValidator()
+        private readonly IUrlValidator _urlValidator;
+
+        public CreateShortUrlDtoValidator(IUrlValidator urlValidator)
         {
+            _urlValidator = urlValidator ?? throw new ArgumentNullException(nameof(urlValidator));
+
             RuleFor(x => x.OriginalUrl)
                 .NotEmpty().WithMessage("Please enter a URL to shorten")
-                .Must(BeAValidUrl).WithMessage("Please enter a valid URL")
+                .Must(url => _urlValidator.IsValidUrl(url)).WithMessage("Please enter a valid URL")
                 .MaximumLength(2000).WithMessage("URL cannot exceed 2000 characters");
 
             RuleFor(x => x.CustomShortCode)
@@ -21,15 +26,6 @@ namespace URLShortener.Application.Validation
             RuleFor(x => x.ExpiresAt)
                 .Must(BeInFuture).When(x => x.ExpiresAt.HasValue)
                 .WithMessage("Expiration date must be in the future");
-        }
-
-        private bool BeAValidUrl(string url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return false;
-
-            return Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
-                   && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
         }
 
         private bool BeInFuture(DateTime? date)
