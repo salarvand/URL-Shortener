@@ -1,11 +1,10 @@
-using Microsoft.AspNetCore.Builder;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using System;
-using System.Linq;
 using URLShortener.Application.Interfaces;
+using URLShortener.Application.Models;
 using URLShortener.Application.Services;
+using URLShortener.Application.Validation;
 using URLShortener.Domain;
 using URLShortener.Infrastructure.Data;
 using URLShortener.Infrastructure.Repositories;
@@ -14,7 +13,12 @@ using URLShortener.Infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddFluentValidation(fv => 
+    {
+        fv.RegisterValidatorsFromAssemblyContaining<CreateShortUrlDtoValidator>();
+        fv.DisableDataAnnotationsValidation = true;
+    });
 
 // Add API Layer services
 builder.Services.AddEndpointsApiExplorer();
@@ -36,13 +40,21 @@ builder.Services.AddSingleton<IUrlValidator, UrlValidator>();
 // Add CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
-    {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
-    });
+    options.AddDefaultPolicy(
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
 });
+
+// Add DbContext
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register validators
+builder.Services.AddTransient<IValidator<CreateShortUrlDto>, CreateShortUrlDtoValidator>();
 
 var app = builder.Build();
 
@@ -54,8 +66,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+
+app.UseCors();
+
 app.UseAuthorization();
+
 app.MapControllers();
 
 // Seed the database with some initial data

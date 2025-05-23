@@ -12,16 +12,16 @@ namespace URLShortener.Application.Services
     {
         private readonly IShortUrlRepository _shortUrlRepository;
         private readonly IShortCodeGenerator _shortCodeGenerator;
-        private readonly IUrlValidator _urlValidator;
+        private readonly IValidationService _validationService;
 
         public ShortUrlService(
             IShortUrlRepository shortUrlRepository,
             IShortCodeGenerator shortCodeGenerator,
-            IUrlValidator urlValidator)
+            IValidationService validationService)
         {
             _shortUrlRepository = shortUrlRepository ?? throw new ArgumentNullException(nameof(shortUrlRepository));
             _shortCodeGenerator = shortCodeGenerator ?? throw new ArgumentNullException(nameof(shortCodeGenerator));
-            _urlValidator = urlValidator ?? throw new ArgumentNullException(nameof(urlValidator));
+            _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
         }
 
         public async Task<ShortUrlDto> CreateShortUrlAsync(CreateShortUrlDto createShortUrlDto)
@@ -29,11 +29,8 @@ namespace URLShortener.Application.Services
             if (createShortUrlDto == null)
                 throw new ArgumentNullException(nameof(createShortUrlDto));
 
-            if (string.IsNullOrWhiteSpace(createShortUrlDto.OriginalUrl))
-                throw new ArgumentException("Original URL cannot be empty", nameof(createShortUrlDto));
-
-            if (!_urlValidator.IsValidUrl(createShortUrlDto.OriginalUrl))
-                throw new ArgumentException("Invalid URL format", nameof(createShortUrlDto.OriginalUrl));
+            // Validate using FluentValidation
+            await _validationService.ValidateAndThrowAsync(createShortUrlDto);
 
             string shortCode;
 
