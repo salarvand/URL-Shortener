@@ -58,5 +58,10 @@ nunit-*.xml
 *.csproj.user
 *.slnLaunch.user
 
+# JetBrains Rider
+*.sln.DotSettings.user
+*.sln.iml
+.idea/
+
 # Cursor
 .cursor/URL-Shortener.rule
