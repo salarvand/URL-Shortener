@@ -1,6 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using System;
 using URLShortener.Application.Interfaces;
 using URLShortener.Application.Models;
 using URLShortener.Application.Services;
@@ -30,6 +31,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Add Application Layer services
 builder.Services.AddScoped<IShortUrlService, ShortUrlService>();
+builder.Services.AddScoped<IValidationService, ValidationService>();
 
 // Add Infrastructure Layer services
 builder.Services.AddScoped<IShortUrlRepository, ShortUrlRepository>();
@@ -55,6 +57,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Register validators
 builder.Services.AddTransient<IValidator<CreateShortUrlDto>, CreateShortUrlDtoValidator>();
+builder.Services.AddTransient<IValidator<ShortUrlDto>, ShortUrlDtoValidator>();
 
 var app = builder.Build();
 

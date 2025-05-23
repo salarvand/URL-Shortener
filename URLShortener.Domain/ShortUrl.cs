@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using URLShortener.Domain.Entities;
 using URLShortener.Domain.Events;
+using URLShortener.Domain.Validators;
 using URLShortener.Domain.ValueObjects;
 
 namespace URLShortener.Domain
@@ -48,15 +49,22 @@ namespace URLShortener.Domain
         // Factory method that enforces business rules during creation
         public static ShortUrl Create(string originalUrl, string shortCode, DateTime? expiresAt = null)
         {
-            // Validate through value objects
-            var urlValue = UrlValue.Create(originalUrl);
-            var shortCodeValue = ShortCodeValue.Create(shortCode);
+            // Validate inputs using domain validators
+            if (!ShortUrlValidator.IsValidUrl(originalUrl))
+                throw new ArgumentException("Invalid URL format", nameof(originalUrl));
+                
+            if (!ShortUrlValidator.IsValidShortCode(shortCode))
+                throw new ArgumentException("Invalid short code format", nameof(shortCode));
+                
+            if (expiresAt.HasValue && !ShortUrlValidator.IsValidExpirationDate(expiresAt))
+                throw new ArgumentException("Expiration date must be in the future", nameof(expiresAt));
 
+            // Create the entity
             var shortUrl = new ShortUrl();
             
             shortUrl.Id = Guid.NewGuid();
-            shortUrl._originalUrl = urlValue.Value;
-            shortUrl._shortCode = shortCodeValue.Value;
+            shortUrl._originalUrl = originalUrl;
+            shortUrl._shortCode = shortCode;
             shortUrl.CreatedAt = DateTime.UtcNow;
             shortUrl.ExpiresAt = expiresAt;
             shortUrl.ClickCount = 0;
@@ -82,15 +90,18 @@ namespace URLShortener.Domain
             bool isActive,
             DateTime? expiresAt = null)
         {
-            // Validate through value objects
-            var urlValue = UrlValue.Create(originalUrl);
-            var shortCodeValue = ShortCodeValue.Create(shortCode);
+            // Validate inputs - less strict for reconstitution since we're loading from DB
+            if (string.IsNullOrWhiteSpace(originalUrl))
+                throw new ArgumentException("Original URL cannot be empty", nameof(originalUrl));
+                
+            if (string.IsNullOrWhiteSpace(shortCode))
+                throw new ArgumentException("Short code cannot be empty", nameof(shortCode));
 
             var shortUrl = new ShortUrl();
             
             shortUrl.Id = id;
-            shortUrl._originalUrl = urlValue.Value;
-            shortUrl._shortCode = shortCodeValue.Value;
+            shortUrl._originalUrl = originalUrl;
+            shortUrl._shortCode = shortCode;
             shortUrl.CreatedAt = createdAt;
             shortUrl.ExpiresAt = expiresAt;
             shortUrl.ClickCount = clickCount;
