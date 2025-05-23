@@ -7,6 +7,16 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
+            @if (!ModelState.IsValid && ModelState[""] != null && ModelState[""].Errors.Any())
+            {
+                <div class="alert alert-danger mb-3">
+                    @foreach (var error in ModelState[""].Errors)
+                    {
+                        <p class="mb-0">@error.ErrorMessage</p>
+                    }
+                </div>
+            }
+            
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h3 class="mb-0">URL Shortener</h3>
@@ -14,20 +24,20 @@
                 <div class="card-body">
                     <form method="post">
                         <div class="mb-3">
-                            <label asp-for="CreateModel.OriginalUrl" class="form-label">Enter URL to shorten</label>
-                            <input asp-for="CreateModel.OriginalUrl" class="form-control" placeholder="https://example.com/long-url" required />
+                            <label asp-for="CreateModel.OriginalUrl" class="form-label">Enter URL to shorten <span class="text-danger">*</span></label>
+                            <input asp-for="CreateModel.OriginalUrl" class="form-control" placeholder="https://example.com/long-url" />
                             <span asp-validation-for="CreateModel.OriginalUrl" class="text-danger"></span>
                         </div>
                         
                         <div class="mb-3">
-                            <label asp-for="CreateModel.CustomShortCode" class="form-label">Custom short code (optional)</label>
+                            <label asp-for="CreateModel.CustomShortCode" class="form-label">Custom short code <span class="text-muted">(optional)</span></label>
                             <input asp-for="CreateModel.CustomShortCode" class="form-control" placeholder="e.g. mylink" />
                             <span asp-validation-for="CreateModel.CustomShortCode" class="text-danger"></span>
-                            <div class="form-text">Leave empty to generate a random code.</div>
+                            <div class="form-text">Leave empty to generate a random code. Use only letters, numbers, underscores, or hyphens.</div>
                         </div>
                         
                         <div class="mb-3">
-                            <label asp-for="CreateModel.ExpiresAt" class="form-label">Expiration date (optional)</label>
+                            <label asp-for="CreateModel.ExpiresAt" class="form-label">Expiration date <span class="text-muted">(optional)</span></label>
                             <input asp-for="CreateModel.ExpiresAt" type="date" class="form-control" />
                             <span asp-validation-for="CreateModel.ExpiresAt" class="text-danger"></span>
                             <div class="form-text">Leave empty for no expiration.</div>

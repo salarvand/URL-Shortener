@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 using URLShortener.Application.Models;
 
@@ -18,9 +19,9 @@ namespace URLShortener.UI.Pages
         [BindProperty]
         public CreateShortUrlDto CreateModel { get; set; }
 
-        public ShortUrlDto ShortUrl { get; set; }
-        public IEnumerable<ShortUrlDto> RecentUrls { get; set; }
-        public string BaseUrl { get; set; }
+        public ShortUrlDto? ShortUrl { get; set; }
+        public IEnumerable<ShortUrlDto> RecentUrls { get; set; } = new List<ShortUrlDto>();
+        public string BaseUrl { get; set; } = string.Empty;
 
         public IndexModel(
             IHttpClientFactory clientFactory,
@@ -41,10 +42,12 @@ namespace URLShortener.UI.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
+            // Even if there are errors, we should still load recent URLs for consistent UX
+            await LoadRecentUrlsAsync();
+            BaseUrl = GetBaseUrl();
+            
             if (!ModelState.IsValid)
             {
-                await LoadRecentUrlsAsync();
-                BaseUrl = GetBaseUrl();
                 return Page();
             }
 
@@ -56,13 +59,55 @@ namespace URLShortener.UI.Pages
                 if (response.IsSuccessStatusCode)
                 {
                     ShortUrl = await response.Content.ReadFromJsonAsync<ShortUrlDto>();
-                    await LoadRecentUrlsAsync();
                 }
                 else
                 {
-                    var error = await response.Content.ReadAsStringAsync();
-                    ModelState.AddModelError("", error);
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    
+                    // Try to extract the error message if it's a JSON response
+                    try 
+                    {
+                        // Some APIs return error details in JSON format
+                        using var doc = JsonDocument.Parse(errorContent);
+                        if (doc.RootElement.TryGetProperty("message", out var messageElement))
+                        {
+                            errorContent = messageElement.GetString() ?? errorContent;
+                        }
+                    }
+                    catch
+                    {
+                        // If parsing fails, use the original error content
+                    }
+                    
+                    // Add appropriate error based on status code
+                    switch (response.StatusCode)
+                    {
+                        case System.Net.HttpStatusCode.BadRequest:
+                            // If error is about custom short code being in use
+                            if (errorContent.Contains("already in use"))
+                            {
+                                ModelState.AddModelError("CreateModel.CustomShortCode", errorContent);
+                            }
+                            // If error is about invalid URL format
+                            else if (errorContent.Contains("URL format") || errorContent.Contains("URL cannot be empty"))
+                            {
+                                ModelState.AddModelError("CreateModel.OriginalUrl", errorContent);
+                            }
+                            else
+                            {
+                                ModelState.AddModelError("", errorContent);
+                            }
+                            break;
+                        default:
+                            ModelState.AddModelError("", $"Error: {response.StatusCode}. {errorContent}");
+                            break;
+                    }
                 }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Error connecting to API");
+                ModelState.AddModelError("", "Cannot connect to the server. Please try again later.");
             }
             catch (Exception ex)
             {
@@ -70,7 +115,6 @@ namespace URLShortener.UI.Pages
                 ModelState.AddModelError("", "An error occurred while creating the short URL. Please try again.");
             }
 
-            BaseUrl = GetBaseUrl();
             return Page();
         }
 
@@ -79,7 +123,11 @@ namespace URLShortener.UI.Pages
             try
             {
                 var client = _clientFactory.CreateClient("API");
-                RecentUrls = await client.GetFromJsonAsync<IEnumerable<ShortUrlDto>>("api/shorturl");
+                var urls = await client.GetFromJsonAsync<IEnumerable<ShortUrlDto>>("api/shorturl");
+                if (urls != null)
+                {
+                    RecentUrls = urls;
+                }
             }
             catch (Exception ex)
             {
