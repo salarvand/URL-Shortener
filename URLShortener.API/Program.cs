@@ -29,7 +29,8 @@ builder.Services.AddScoped<IShortUrlService, ShortUrlService>();
 
 // Add Infrastructure Layer services
 builder.Services.AddScoped<IShortUrlRepository, ShortUrlRepository>();
-builder.Services.AddSingleton<IShortCodeGenerator, ShortCodeGenerator>();
+// Use the new efficient Base62 algorithm for generating short codes
+builder.Services.AddSingleton<IShortCodeGenerator, Base62ShortCodeGenerator>();
 builder.Services.AddSingleton<IUrlValidator, UrlValidator>();
 
 // Add CORS
