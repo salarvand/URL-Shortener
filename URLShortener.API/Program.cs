@@ -47,6 +47,10 @@ builder.Services.AddSingleton<IUrlScanningService, UrlScanningService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IRateLimiter, InMemoryRateLimiter>();
 
+// Add storage optimization services
+builder.Services.AddScoped<IStorageOptimizer, StorageOptimizer>();
+builder.Services.AddHostedService<StorageOptimizationBackgroundService>();
+
 // Add CORS with a more restrictive policy
 builder.Services.AddCors(options =>
 {
