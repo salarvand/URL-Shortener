@@ -53,5 +53,8 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
+# Visual Studio
+.vs/
+
 # Cursor
 .cursor/URL-Shortener.rule
