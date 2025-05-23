@@ -1,40 +1,62 @@
 using System;
+using System.Collections.Generic;
+using URLShortener.Domain.Entities;
+using URLShortener.Domain.Events;
+using URLShortener.Domain.ValueObjects;
 
 namespace URLShortener.Domain
 {
-    public class ShortUrl
+    /// <summary>
+    /// Aggregate root for shortened URLs
+    /// </summary>
+    public class ShortUrl : Entity, IAggregateRoot
     {
-        // Private setters protect domain invariants but allow EF Core to set values
-        public Guid Id { get; private set; }
-        public string OriginalUrl { get; private set; }
-        public string ShortCode { get; private set; }
+        // Properties with value objects
+        private UrlValue _originalUrl;
+        private ShortCodeValue _shortCode;
+        
+        public string OriginalUrl => _originalUrl;
+        public string ShortCode => _shortCode;
         public DateTime CreatedAt { get; private set; }
         public DateTime? ExpiresAt { get; private set; }
         public int ClickCount { get; private set; }
         public bool IsActive { get; private set; }
+        
+        // Navigation properties
+        private readonly List<ClickStatistic> _clickStatistics;
+        public IReadOnlyCollection<ClickStatistic> ClickStatistics => _clickStatistics?.AsReadOnly();
 
         // Protected constructor for EF Core
-        protected ShortUrl() { }
+        protected ShortUrl() 
+        {
+            _clickStatistics = new List<ClickStatistic>();
+        }
 
         // Factory method that enforces business rules during creation
         public static ShortUrl Create(string originalUrl, string shortCode, DateTime? expiresAt = null)
         {
-            if (string.IsNullOrWhiteSpace(originalUrl))
-                throw new ArgumentException("Original URL cannot be empty", nameof(originalUrl));
-            
-            if (string.IsNullOrWhiteSpace(shortCode))
-                throw new ArgumentException("Short code cannot be empty", nameof(shortCode));
+            // Validate through value objects
+            var urlValue = UrlValue.Create(originalUrl);
+            var shortCodeValue = ShortCodeValue.Create(shortCode);
 
-            return new ShortUrl
-            {
-                Id = Guid.NewGuid(),
-                OriginalUrl = originalUrl,
-                ShortCode = shortCode,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = expiresAt,
-                ClickCount = 0,
-                IsActive = true
-            };
+            var shortUrl = new ShortUrl();
+            
+            shortUrl.Id = Guid.NewGuid();
+            shortUrl._originalUrl = urlValue;
+            shortUrl._shortCode = shortCodeValue;
+            shortUrl.CreatedAt = DateTime.UtcNow;
+            shortUrl.ExpiresAt = expiresAt;
+            shortUrl.ClickCount = 0;
+            shortUrl.IsActive = true;
+
+            // Add domain event
+            shortUrl.AddDomainEvent(new UrlCreatedEvent(
+                shortUrl.Id, 
+                shortUrl.ShortCode, 
+                shortUrl.OriginalUrl, 
+                expiresAt));
+
+            return shortUrl;
         }
 
         // Factory method to reconstitute existing entities (for persistence/testing)
@@ -47,27 +69,40 @@ namespace URLShortener.Domain
             bool isActive,
             DateTime? expiresAt = null)
         {
-            if (string.IsNullOrWhiteSpace(originalUrl))
-                throw new ArgumentException("Original URL cannot be empty", nameof(originalUrl));
-            
-            if (string.IsNullOrWhiteSpace(shortCode))
-                throw new ArgumentException("Short code cannot be empty", nameof(shortCode));
+            // Validate through value objects
+            var urlValue = UrlValue.Create(originalUrl);
+            var shortCodeValue = ShortCodeValue.Create(shortCode);
 
-            return new ShortUrl
-            {
-                Id = id,
-                OriginalUrl = originalUrl,
-                ShortCode = shortCode,
-                CreatedAt = createdAt,
-                ExpiresAt = expiresAt,
-                ClickCount = clickCount,
-                IsActive = isActive
-            };
+            var shortUrl = new ShortUrl();
+            
+            shortUrl.Id = id;
+            shortUrl._originalUrl = urlValue;
+            shortUrl._shortCode = shortCodeValue;
+            shortUrl.CreatedAt = createdAt;
+            shortUrl.ExpiresAt = expiresAt;
+            shortUrl.ClickCount = clickCount;
+            shortUrl.IsActive = isActive;
+
+            return shortUrl;
         }
 
         public void IncrementClickCount()
         {
             ClickCount++;
+            
+            // Add domain event
+            AddDomainEvent(new UrlClickedEvent(
+                Id, 
+                ShortCode, 
+                OriginalUrl, 
+                ClickCount));
+        }
+
+        public void RecordClick(string userAgent = null, string ipAddress = null, string refererUrl = null)
+        {
+            var clickStat = ClickStatistic.Create(Id, userAgent, ipAddress, refererUrl);
+            _clickStatistics.Add(clickStat);
+            IncrementClickCount();
         }
 
         public void Deactivate()
