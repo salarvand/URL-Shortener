@@ -1,11 +1,11 @@
-using FluentValidation;
-using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System;
+using System.Linq;
 using URLShortener.Application.Interfaces;
-using URLShortener.Application.Models;
 using URLShortener.Application.Services;
-using URLShortener.Application.Validation;
 using URLShortener.Domain;
 using URLShortener.Infrastructure.Data;
 using URLShortener.Infrastructure.Repositories;
@@ -14,12 +14,7 @@ using URLShortener.Infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers()
-    .AddFluentValidationAutoValidation()
-    .AddFluentValidationClientsideAdapters();
-
-// Register validators
-builder.Services.AddValidatorsFromAssemblyContaining<CreateShortUrlDtoValidator>();
+builder.Services.AddControllers();
 
 // Add API Layer services
 builder.Services.AddEndpointsApiExplorer();
@@ -50,10 +45,6 @@ builder.Services.AddCors(options =>
                   .AllowAnyMethod();
         });
 });
-
-// Register specific validators
-builder.Services.AddTransient<IValidator<CreateShortUrlDto>, CreateShortUrlDtoValidator>();
-builder.Services.AddTransient<IValidator<ShortUrlDto>, ShortUrlDtoValidator>();
 
 var app = builder.Build();
 

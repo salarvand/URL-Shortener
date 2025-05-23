@@ -1,17 +1,12 @@
-using FluentValidation;
-using FluentValidation.AspNetCore;
-using URLShortener.Application.Models;
-using URLShortener.Application.Validation;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorPages()
-    .AddFluentValidationAutoValidation()
-    .AddFluentValidationClientsideAdapters();
-
-// Register validators
-builder.Services.AddValidatorsFromAssemblyContaining<CreateShortUrlDtoValidator>();
+builder.Services.AddRazorPages();
 
 // Configure HttpClient for API calls
 builder.Services.AddHttpClient("API", client =>
