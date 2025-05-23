@@ -2,8 +2,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MediatR;
 using System;
 using System.Linq;
+using System.Reflection;
+using URLShortener.Application.Features.ShortUrls;
 using URLShortener.Application.Interfaces;
 using URLShortener.Application.Services;
 using URLShortener.Domain;
@@ -15,6 +18,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Add MediatR
+builder.Services.AddMediatR(typeof(CreateShortUrl).Assembly);
 
 // Add API Layer services
 builder.Services.AddEndpointsApiExplorer();

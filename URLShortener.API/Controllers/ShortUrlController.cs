@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -5,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using URLShortener.Application.Exceptions;
-using URLShortener.Application.Interfaces;
+using URLShortener.Application.Features.ShortUrls;
 using URLShortener.Application.Models;
 
 namespace URLShortener.API.Controllers
@@ -14,25 +15,25 @@ namespace URLShortener.API.Controllers
     [Route("api/[controller]")]
     public class ShortUrlController : ControllerBase
     {
-        private readonly IShortUrlService _shortUrlService;
+        private readonly IMediator _mediator;
         private readonly ILogger<ShortUrlController> _logger;
 
         public ShortUrlController(
-            IShortUrlService shortUrlService,
+            IMediator mediator,
             ILogger<ShortUrlController> logger)
         {
-            _shortUrlService = shortUrlService ?? throw new ArgumentNullException(nameof(shortUrlService));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<ShortUrlDto>> Create([FromBody] CreateShortUrlDto createShortUrlDto)
+        public async Task<ActionResult<ShortUrlDto>> Create([FromBody] CreateShortUrl.Command command)
         {
             try
             {
-                var shortUrl = await _shortUrlService.CreateShortUrlAsync(createShortUrlDto);
+                var shortUrl = await _mediator.Send(command);
                 return CreatedAtAction(nameof(GetByCode), new { code = shortUrl.ShortCode }, shortUrl);
             }
             catch (ValidationException ex)
@@ -66,7 +67,9 @@ namespace URLShortener.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ShortUrlDto>> GetByCode(string code)
         {
-            var shortUrl = await _shortUrlService.GetShortUrlByCodeAsync(code);
+            var query = new GetShortUrlByCode.Query { ShortCode = code };
+            var shortUrl = await _mediator.Send(query);
+            
             if (shortUrl == null)
                 return NotFound();
 
@@ -77,7 +80,9 @@ namespace URLShortener.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<ShortUrlDto>>> GetAll()
         {
-            var shortUrls = await _shortUrlService.GetAllShortUrlsAsync();
+            var query = new GetAllShortUrls.Query();
+            var shortUrls = await _mediator.Send(query);
+            
             return Ok(shortUrls);
         }
 
@@ -86,11 +91,30 @@ namespace URLShortener.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ShortUrlDto>> GetById(Guid id)
         {
-            var shortUrl = await _shortUrlService.GetShortUrlDetailsByIdAsync(id);
-            if (shortUrl == null)
-                return NotFound();
+            // This endpoint could be implemented with a new query
+            // For now, we'll return NotImplemented
+            return StatusCode(StatusCodes.Status501NotImplemented);
+        }
 
-            return Ok(shortUrl);
+        [HttpGet("redirect/{code}")]
+        [ProducesResponseType(StatusCodes.Status302Found)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Redirect(string code)
+        {
+            var command = new RedirectAndTrack.Command 
+            { 
+                ShortCode = code,
+                UserAgent = Request.Headers.UserAgent.ToString(),
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                RefererUrl = Request.Headers.Referer.ToString()
+            };
+            
+            var originalUrl = await _mediator.Send(command);
+            
+            if (string.IsNullOrEmpty(originalUrl))
+                return NotFound();
+                
+            return base.Redirect(originalUrl);
         }
     }
 } 
