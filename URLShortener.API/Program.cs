@@ -2,8 +2,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.Linq;
 using URLShortener.Application.Interfaces;
 using URLShortener.Application.Services;
+using URLShortener.Domain;
 using URLShortener.Infrastructure.Data;
 using URLShortener.Infrastructure.Repositories;
 using URLShortener.Infrastructure.Services;
@@ -54,7 +57,7 @@ app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed the database with some initial data (optional)
+// Seed the database with some initial data
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -62,6 +65,48 @@ using (var scope = app.Services.CreateScope())
     
     // Ensure the database is created
     context.Database.EnsureCreated();
+    
+    // Add sample data if none exists
+    if (!context.ShortUrls.Any())
+    {
+        var now = DateTime.UtcNow;
+        
+        var samples = new[]
+        {
+            ShortUrl.Reconstitute(
+                Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                "https://www.google.com",
+                "google",
+                now,
+                5,
+                true
+            ),
+            ShortUrl.Reconstitute(
+                Guid.Parse("00000000-0000-0000-0000-000000000002"),
+                "https://www.github.com",
+                "github",
+                now,
+                3,
+                true
+            ),
+            ShortUrl.Reconstitute(
+                Guid.Parse("00000000-0000-0000-0000-000000000003"),
+                "https://www.microsoft.com",
+                "msft",
+                now,
+                1,
+                true,
+                now.AddDays(30)
+            )
+        };
+        
+        foreach (var sample in samples)
+        {
+            context.ShortUrls.Add(sample);
+        }
+        
+        context.SaveChanges();
+    }
 }
 
 app.Run();

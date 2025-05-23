@@ -53,7 +53,8 @@ namespace URLShortener.Application.Services
                 } while (await _shortUrlRepository.ShortCodeExistsAsync(shortCode));
             }
 
-            var shortUrl = new ShortUrl(
+            // Use domain factory method to create the entity
+            var shortUrl = ShortUrl.Create(
                 createShortUrlDto.OriginalUrl,
                 shortCode,
                 createShortUrlDto.ExpiresAt
