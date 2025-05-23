@@ -17,6 +17,9 @@ namespace URLShortener.Domain.Entities
 
         public static ClickStatistic Create(Guid shortUrlId, string? userAgent = null, string? ipAddress = null, string? refererUrl = null)
         {
+            if (shortUrlId == Guid.Empty)
+                throw new ArgumentException("ShortUrl ID cannot be empty", nameof(shortUrlId));
+
             var clickStat = new ClickStatistic
             {
                 Id = Guid.NewGuid(),

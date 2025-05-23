@@ -51,10 +51,10 @@ namespace URLShortener.Domain
         {
             // Validate inputs using domain validators
             if (!ShortUrlValidator.IsValidUrl(originalUrl))
-                throw new ArgumentException("Invalid URL format", nameof(originalUrl));
+                throw new ArgumentException("Original URL cannot be null or empty", nameof(originalUrl));
                 
             if (!ShortUrlValidator.IsValidShortCode(shortCode))
-                throw new ArgumentException("Invalid short code format", nameof(shortCode));
+                throw new ArgumentException("Short code cannot be null or empty", nameof(shortCode));
                 
             if (expiresAt.HasValue && !ShortUrlValidator.IsValidExpirationDate(expiresAt))
                 throw new ArgumentException("Expiration date must be in the future", nameof(expiresAt));
@@ -137,6 +137,11 @@ namespace URLShortener.Domain
         public bool IsExpired()
         {
             return ExpiresAt.HasValue && ExpiresAt.Value < DateTime.UtcNow;
+        }
+        
+        public void SetExpiryDate(DateTime expiryDate)
+        {
+            ExpiresAt = expiryDate;
         }
     }
 } 
