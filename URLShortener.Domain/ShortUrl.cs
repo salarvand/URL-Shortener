@@ -11,12 +11,25 @@ namespace URLShortener.Domain
     /// </summary>
     public class ShortUrl : Entity, IAggregateRoot
     {
-        // Properties with value objects
-        private UrlValue _originalUrl;
-        private ShortCodeValue _shortCode;
+        // Backing fields - these will store the actual values
+        private string _originalUrl;
+        private string _shortCode;
         
-        public string OriginalUrl => _originalUrl;
-        public string ShortCode => _shortCode;
+        // Properties for domain logic - create value objects on-the-fly when accessed
+        public string OriginalUrl 
+        {
+            get => _originalUrl;
+            // Private setter for EF Core
+            private set => _originalUrl = value;
+        }
+        
+        public string ShortCode 
+        {
+            get => _shortCode;
+            // Private setter for EF Core
+            private set => _shortCode = value;
+        }
+        
         public DateTime CreatedAt { get; private set; }
         public DateTime? ExpiresAt { get; private set; }
         public int ClickCount { get; private set; }
@@ -42,8 +55,8 @@ namespace URLShortener.Domain
             var shortUrl = new ShortUrl();
             
             shortUrl.Id = Guid.NewGuid();
-            shortUrl._originalUrl = urlValue;
-            shortUrl._shortCode = shortCodeValue;
+            shortUrl._originalUrl = urlValue.Value;
+            shortUrl._shortCode = shortCodeValue.Value;
             shortUrl.CreatedAt = DateTime.UtcNow;
             shortUrl.ExpiresAt = expiresAt;
             shortUrl.ClickCount = 0;
@@ -76,8 +89,8 @@ namespace URLShortener.Domain
             var shortUrl = new ShortUrl();
             
             shortUrl.Id = id;
-            shortUrl._originalUrl = urlValue;
-            shortUrl._shortCode = shortCodeValue;
+            shortUrl._originalUrl = urlValue.Value;
+            shortUrl._shortCode = shortCodeValue.Value;
             shortUrl.CreatedAt = createdAt;
             shortUrl.ExpiresAt = expiresAt;
             shortUrl.ClickCount = clickCount;

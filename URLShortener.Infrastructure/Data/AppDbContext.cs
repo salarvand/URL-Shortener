@@ -26,8 +26,16 @@ namespace URLShortener.Infrastructure.Data
             modelBuilder.Entity<ShortUrl>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.OriginalUrl).IsRequired();
-                entity.Property(e => e.ShortCode).IsRequired().HasMaxLength(20);
+                
+                // Configure OriginalUrl property
+                entity.Property(e => e.OriginalUrl)
+                      .IsRequired();
+                
+                // Configure ShortCode property
+                entity.Property(e => e.ShortCode)
+                      .IsRequired()
+                      .HasMaxLength(20);
+                
                 entity.HasIndex(e => e.ShortCode).IsUnique();
                 
                 // Configure the relationship with ClickStatistics
