@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using URLShortener.Application.Interfaces;
 using URLShortener.Application.Services;
 using URLShortener.Infrastructure.Data;
@@ -14,10 +17,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add Database services
+// Add Database services using in-memory database
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseInMemoryDatabase("URLShortenerDb"));
 
 // Add Application Layer services
 builder.Services.AddScoped<IShortUrlService, ShortUrlService>();
@@ -51,5 +53,15 @@ app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
+
+// Seed the database with some initial data (optional)
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<AppDbContext>();
+    
+    // Ensure the database is created
+    context.Database.EnsureCreated();
+}
 
 app.Run();
