@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using URLShortener.Application.Interfaces;
 using URLShortener.Domain;
 using URLShortener.Infrastructure.Data;
