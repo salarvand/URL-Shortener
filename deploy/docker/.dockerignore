@@ -1,0 +1,69 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+.docker
+docker-compose.yml
+docker-compose.*.yml
+
+# .NET
+**/bin/
+**/obj/
+**/out/
+**/*.suo
+**/*.user
+**/*.userosscache
+**/*.sln.docstates
+
+# Tests
+**/TestResults/
+**/*.coverage
+**/*.coveragexml
+
+# IDE
+.vs/
+.vscode/
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Node.js/npm
+node_modules/
+npm-debug.log*
+
+# Logs and databases
+*.log
+*.sqlite
+*.sqlite3
+*.db
+*.jfm
+
+# OS specific
+.DS_Store
+Thumbs.db 

@@ -52,3 +52,11 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Visual Studio
+.vs/
+*.csproj.user
+*.slnLaunch.user
+
+# Cursor
+.cursor/URL-Shortener.rule
